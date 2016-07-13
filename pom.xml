@@ -7,84 +7,183 @@
   <artifactId>Frameworkium-BDD</artifactId>
   <version>2.0.3-BDD</version>
 
-  <name>Frameworkium-BDD</name>
-  <description>
-    A template designed to get up and running quickly with Selenium and Appium.
-  </description>
-  <url/>
-  <inceptionYear/>
-  <organization/>
-  <licenses/>
-
-  <developers/>
-  <contributors/>
-
-  <prerequisites>
-    <maven>3.1.1</maven>
-  </prerequisites>
-
-  <modules/>
-
-  <scm/>
-  <issueManagement/>
-  <ciManagement/>
-  <distributionManagement/>
-
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <env.config>local</env.config>
-    <threads>1</threads>
-    <groups/>
-    <aspectj.version>1.8.9</aspectj.version>
+    <!-- Needed for allure-maven-plugin to specify report version -->
+    <allure.version>1.4.11</allure.version>
+    <aspectj.version>1.7.4</aspectj.version>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
+  <name>Frameworkum-Cukes</name>
+  <description>Demo/POC Frameworkium Cucumber-JVM Test Automation Framework</description>
 
   <dependencies>
     <dependency>
-      <groupId>info.cukes</groupId>
-      <artifactId>cucumber-testng</artifactId>
-      <version>1.2.4</version>
-    </dependency>
-
-    <dependency>
-      <groupId>info.cukes</groupId>
-      <artifactId>cucumber-java</artifactId>
-      <version>1.2.4</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.github.Frameworkium</groupId>
-      <artifactId>frameworkium-core</artifactId>
-      <version>2.0.4</version>
-    </dependency>
-
-    <!--dependency>
       <groupId>ru.yandex.qatools.allure</groupId>
       <artifactId>allure-cucumber-jvm-adaptor</artifactId>
       <version>1.5.1</version>
-    </dependency-->
-
+    </dependency>
+    <dependency>
+      <groupId>com.Frameworkium</groupId>
+      <artifactId>frameworkium-core</artifactId>
+      <version>1.1.4</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.testng</groupId>
+          <artifactId>testng</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+  <profiles>
+    <profile>
+      <id>grid-test</id>
+      <activation>
+        <property>
+          <name>grid-test</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <customArgLine />
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.18.1</version>
+            <configuration>
+              <systemPropertyVariables>
+                <gridURL>http://localhost:4444/wd/hub</gridURL>
+              </systemPropertyVariables>
+              <forkCount>5</forkCount>
+              <reuseForks>false</reuseForks>
+              <!--<parallel>classes</parallel>-->
+              <!--<threadCount>5</threadCount>-->
+              <includes>
+                <include>**/*IT.class</include>
+              </includes>
+              <testFailureIgnore>false</testFailureIgnore>
+              <argLine>
+                 -javaagent:${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar
+              </argLine>
+              <properties>
+                <property>
+                  <name>listener</name>
+                  <value>net.moodel.demo.utils.CustomAllureRunListener</value>
+                </property>
+              </properties>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjweaver</artifactId>
+                <version>${aspectj.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+          <plugin>
+            <groupId>com.github.temyers</groupId>
+            <artifactId>cucumber-jvm-parallel-plugin</artifactId>
+            <version>1.2.1</version>
+            <executions>
+              <execution>
+                <id>generateRunners</id>
+                <phase>generate-test-sources</phase>
+                <goals>
+                  <goal>generateRunners</goal>
+                </goals>
+                <configuration>
+                  <!-- Mandatory -->
+                  <!-- comma separated list of package names to scan for glue code -->
+                  <glue>net.moodel.demo.steps</glue>
+                  <!-- These are the default values -->
+                  <!-- Where to output the generated tests -->
+                  <outputDirectory>${project.build.directory}/generated-test-sources/cucumber</outputDirectory>
+                  <!-- The diectory, which must be in the root of the runtime classpath, containing your feature files.  -->
+                  <featuresDirectory>src/test/resources/features/</featuresDirectory>
+                  <!-- Directory where the cucumber report files shall be written  -->
+                  <cucumberOutputDir>target/cucumber</cucumberOutputDir>
+                  <!-- comma separated list of output formats -->
+                  <format>html,json</format>
+                  <!-- CucumberOptions.strict property -->
+                  <strict>true</strict>
+                  <!-- CucumberOptions.monochrome property -->
+                  <monochrome>false</monochrome>
+                  <!-- The tags to run, maps to CucumberOptions.tags property -->
+                  <tags>"~@ignore"</tags>
+                  <!-- If set to true, only feature files containing the required tags shall be generated. -->
+                  <!-- Excluded tags (~@notMe) are ignored. -->
+                  <filterFeaturesByTags>false</filterFeaturesByTags>
+                  <!-- Generate TestNG runners instead of JUnit ones. -->
+                  <useTestNG>false</useTestNG>
+                  <!-- The naming scheme to use for the generated test classes.  One of 'simple' or 'feature-title' -->
+                  <namingScheme>feature-title</namingScheme>
+                  <!-- The class naming pattern to use.  Only required/used if naming scheme is 'pattern'.-->
+                  <namingPattern>Parallel{c}IT</namingPattern>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <source>1.7</source>
+              <target>1.7</target>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>standard-execution</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <customArgLine />
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.18.1</version>
+            <configuration>
+              <testFailureIgnore>false</testFailureIgnore>
+              <argLine>
+                -javaagent:${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar
+              </argLine>
+              <properties>
+                <property>
+                  <name>listener</name>
+                  <value>net.moodel.demo.utils.CustomAllureRunListener</value>
+                </property>
+              </properties>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjweaver</artifactId>
+                <version>${aspectj.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <source>1.7</source>
+              <target>1.7</target>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <reporting>
     <excludeDefaults>true</excludeDefaults>
@@ -92,52 +191,9 @@
       <plugin>
         <groupId>ru.yandex.qatools.allure</groupId>
         <artifactId>allure-maven-plugin</artifactId>
-        <version>2.5</version>
+        <version>2.0</version>
       </plugin>
     </plugins>
   </reporting>
 
-  <profiles>
-    <profile>
-      <id>selenium-tests</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.5.1</version>
-            <configuration>
-              <source>1.8</source>
-              <target>1.8</target>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.19.1</version>
-            <configuration>
-              <parallel>methods</parallel>
-              <threadCount>${threads}</threadCount>
-              <systemProperties>
-                <screenshotDirectory>
-                  ${project.build.directory}/screenshots
-                </screenshotDirectory>
-                <allure.issues.tracker.pattern>
-                  /browse/%s
-                </allure.issues.tracker.pattern>
-              </systemProperties>
-              <groups>${groups}</groups>
-              <testFailureIgnore>false</testFailureIgnore>
-              <argLine>
-                -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
-              </argLine>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
